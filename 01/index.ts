@@ -1,11 +1,11 @@
 import * as fs from "fs/promises";
 
-const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-function wordToInt(val: string) {
-    if (!/^\d+$/.test(val)) {
-        val = `${words.indexOf(val)}`;
+const words = ["\\d", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+function wordToInt(val: string): number {
+    if (!/\d/.test(val)) {
+        return words.indexOf(val);
     }
-    return val;
+    return parseInt(val, 10);
 }
 
 (async () => {
@@ -14,17 +14,13 @@ function wordToInt(val: string) {
     const codes = input.split("\r\n").filter((a) => !!a);
 
     const numbers: number[] = [];
-    for (let code of codes) {
-        let min = code.replace(/^.*?((\d|one|two|three|four|five|six|seven|eight|nine)).*$/, "$1");
-        let max = code.replace(/^.*(\d|one|two|three|four|five|six|seven|eight|nine).*?$/, "$1");
-
-        min = wordToInt(min);
-        max = wordToInt(max);
-
-        numbers.push(parseInt(`${min}${max}`));
+    for (const code of codes) {
+        const min = code.replace(new RegExp(`^.*?(${words.join("|")}).*$`), "$1");
+        const max = code.replace(new RegExp(`^.*(${words.join("|")}).*?$`), "$1");
+        numbers.push(parseInt(`${wordToInt(min)}${wordToInt(max)}`, 10));
     }
 
     const sum = numbers.reduce((a, b) => a + b);
 
-    console.log({ numbers, sum });
+    console.log(sum);
 })();
