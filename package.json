@@ -1,0 +1,17 @@
+{
+    "name": "adventofcode-2023",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "ts-node 01/index.ts"
+    },
+    "repository": "https://github.com/dispossible/adventofcode-2023.git",
+    "author": "Dispossible",
+    "license": "ISC",
+    "dependencies": {
+        "ts-node": "^10.9.1",
+        "typescript": "^5.3.2"
+    }
+}
