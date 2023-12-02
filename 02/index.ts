@@ -19,21 +19,17 @@ const BAG_OF_CUBES: CubeSet = {
     const input = await readFile("02/input.txt");
 
     const games = input.map(parseGame);
-    const possibleGames: number[] = [];
 
-    for (const game of games) {
-        if (
+    const possibleGames = games.filter(
+        (game) =>
             game.totals.red <= BAG_OF_CUBES.red &&
             game.totals.green <= BAG_OF_CUBES.green &&
             game.totals.blue <= BAG_OF_CUBES.blue
-        ) {
-            possibleGames.push(game.id);
-        }
-    }
+    );
 
     console.log({
         possibleGames,
-        sum: sum(possibleGames),
+        sum: sum(possibleGames.map((game) => game.id)),
         powers: sum(games.map((game) => game.totals.red * game.totals.blue * game.totals.green)),
     });
 })();
