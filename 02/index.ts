@@ -28,7 +28,6 @@ const BAG_OF_CUBES: CubeSet = {
     );
 
     console.log({
-        possibleGames,
         sum: sum(possibleGames.map((game) => game.id)),
         powers: sum(games.map((game) => game.totals.red * game.totals.blue * game.totals.green)),
     });
