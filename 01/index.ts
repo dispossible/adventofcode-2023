@@ -1,4 +1,5 @@
-import * as fs from "fs/promises";
+import { sum } from "../utils/array";
+import { readFile } from "../utils/file";
 
 const words = ["\\d", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 function wordToInt(val: string): number {
@@ -9,9 +10,7 @@ function wordToInt(val: string): number {
 }
 
 (async () => {
-    const input = await fs.readFile("01/input.txt", { encoding: "utf-8" });
-
-    const codes = input.split("\r\n").filter((a) => !!a);
+    const codes = await readFile("01/input.txt");
 
     const numbers: number[] = [];
     for (const code of codes) {
@@ -20,7 +19,5 @@ function wordToInt(val: string): number {
         numbers.push(parseInt(`${wordToInt(min)}${wordToInt(max)}`, 10));
     }
 
-    const sum = numbers.reduce((a, b) => a + b);
-
-    console.log(sum);
+    console.log(sum(numbers));
 })();
