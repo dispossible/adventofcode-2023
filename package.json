@@ -7,7 +7,8 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "ts-node 01/index.ts",
         "1": "ts-node 01/index.ts",
-        "2": "ts-node 02/index.ts"
+        "2": "ts-node 02/index.ts",
+        "3": "ts-node 03/index.ts"
     },
     "repository": "https://github.com/dispossible/adventofcode-2023.git",
     "author": "Dispossible",
