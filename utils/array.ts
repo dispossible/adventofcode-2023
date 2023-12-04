@@ -12,3 +12,7 @@ export function sum(arr: (number | string)[]): number {
         return a + b;
     }, 0);
 }
+
+export function intersection(arr1: unknown[], arr2: unknown[]): unknown[] {
+    return arr1.filter((val) => arr2.includes(val));
+}
