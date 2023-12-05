@@ -1,5 +1,5 @@
 import { intersection, sum } from "../utils/array";
-import { readFile } from "../utils/file";
+import { readFile, parseNumberList } from "../utils/file";
 
 type Card = {
     id: number;
@@ -37,21 +37,14 @@ function parseCard(gameStr: string): Card {
 
     const [winnersStr, numbersStr] = numberSets.split("|");
 
-    const winners = parseNumberStr(winnersStr);
-    const numbers = parseNumberStr(numbersStr);
+    const winners = parseNumberList(winnersStr, " ");
+    const numbers = parseNumberList(numbersStr, " ");
 
     return {
         id,
         winners,
         numbers,
     };
-}
-
-function parseNumberStr(numberStr: string): number[] {
-    return numberStr
-        .split(" ")
-        .filter((s) => !!s)
-        .map((s) => parseInt(s, 10));
 }
 
 function scoreCard(card: Card): ScoreCard {

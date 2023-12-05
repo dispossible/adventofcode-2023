@@ -1,5 +1,5 @@
-export function range(start: number, end: number): number[] {
-    return new Array(end - start).map((_, i) => i + start);
+export function range(start: number, size: number): number[] {
+    return new Array(size).fill(0).map((_, i) => i + start);
 }
 export function sum(arr: (number | string)[]): number {
     return arr.reduce<number>((a, b) => {
