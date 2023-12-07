@@ -10,6 +10,7 @@
         "4": "ts-node 04/index.ts",
         "5": "ts-node 05/index.ts",
         "6": "ts-node 06/index.ts",
+        "7": "ts-node 07/index.ts",
         "test": "jest"
     },
     "repository": "https://github.com/dispossible/adventofcode-2023.git",
