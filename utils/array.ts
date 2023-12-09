@@ -13,6 +13,10 @@ export function sum(arr: (number | string)[]): number {
     }, 0);
 }
 
-export function intersection(arr1: unknown[], arr2: unknown[]): unknown[] {
+export function intersection<T>(arr1: T[], arr2: T[]): T[] {
     return arr1.filter((val) => arr2.includes(val));
+}
+
+export function unique<T>(arr: T[]): T[] {
+    return [...new Set(arr)];
 }
