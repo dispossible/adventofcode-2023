@@ -13,7 +13,7 @@ type Match = {
 };
 
 (async () => {
-    const input = await readFile("12/input.txt");
+    const input = await readFile("12/test.txt");
 
     const rows: Input[] = input.map((line) => {
         const [towers, groups] = line.split(" ");
@@ -25,13 +25,18 @@ type Match = {
 
     const unfolded = rows.map(unfold);
 
-    //const sequences = generateSequences(rows[6]);
-    const sequences = unfolded.map(generateSequences);
+    const sequences = generateSequences(unfolded[6]);
+    // const sequences = unfolded.map((input, line) => {
+    //     console.log({
+    //         line,
+    //     });
+    //     return generateSequences(input);
+    // });
 
-    console.log(sequences.join(","));
-    console.log({
-        sum: sum(sequences),
-    });
+    // console.log(sequences.join(","));
+    // console.log({
+    //     sum: sum(sequences),
+    // });
 })();
 function findAllMatches(reg: RegExp, str: string) {
     reg = new RegExp(reg, "g");
@@ -41,14 +46,23 @@ function findAllMatches(reg: RegExp, str: string) {
         matches.push({ text: found[0], index: found.index });
         reg.lastIndex = found.index + 1;
     }
+    if (matches.length < 1) {
+        console.error({
+            reg,
+            str,
+            found,
+            matches,
+        });
+    }
     return matches;
 }
 
 function generateSequences(input: Input) {
-    console.log(input);
-
     const matches: Match[][] = [];
 
+    console.log(input);
+
+    const totalTowers = sum(input.groups);
     for (const [index, group] of input.groups.entries()) {
         const precedingSets = input.groups
             .slice(0, index)
@@ -66,56 +80,61 @@ function generateSequences(input: Input) {
         regex += followingSets ? `(?=[\\.\\?]+${followingSets}[\\.\\?]*$)` : `(?=[\\.\\?]*$)`;
 
         const matcher = new RegExp(regex);
+        console.log(matcher);
 
         matches.push(findAllMatches(matcher, input.towers));
     }
 
-    console.log(matches);
-
-    // const getPossibleHigherMatches = (match: Match, matchIndex: number) => {
-    //     const higherMatches = matches[matchIndex];
-    //     const count = higherMatches.filter((hm) => hm.index > match.index + match.text.length);
-
-    //     if (matchIndex + 1 === matches.length) {
-    //         return count.length;
-    //     } else {
-    //         return count.reduce((sum, match) => sum + getPossibleHigherMatches(match, matchIndex + 1), 0);
-    //     }
-    // };
-    // const count = matches[0].reduce((sum, match) => sum + getPossibleHigherMatches(match, 1), 0);
-
     const sequences = new Set<string>();
-
     const counters = matches.map((match) => ({
         state: 0,
         max: match.length - 1,
     }));
 
+    console.log(matches);
+
+    let tick = 0;
     let counterIndexToDecrement = counters.length - 1;
-    while (counterIndexToDecrement >= 0) {
+    search: while (counterIndexToDecrement >= 0) {
         // Generate the sequence
         let sequence = input.towers;
         const matchesToUse = counters.map((counter, index) => matches[index][counter.state]);
         for (const match of matchesToUse) {
-            sequence = replaceAt(sequence, match.index, match.text.replaceAll("?", "#"));
+            sequence = replaceAt(sequence, match.index, match.text.replace(/\?/g, "#"));
         }
-        sequence = sequence.replaceAll("?", ".");
+        sequence = sequence.replace(/\?/g, ".");
+
         if (validate(sequence, input.groups)) {
             sequences.add(sequence);
+
+            //if (tick % 100_000 === 0)
+            console.log(counters.map((counter) => counter.state).join("-"), sequence, "valid", tick);
+        } else {
+            //if (tick % 100_000 === 0)
+            console.log(counters.map((counter) => counter.state).join("-"), sequence, "invalid", tick);
         }
 
         // Advance this dumb loop
         counterIndexToDecrement = counters.length - 1;
-        while (counterIndexToDecrement >= 0) {
+        tick: while (counterIndexToDecrement >= 0) {
             const counterToDecrement = counters[counterIndexToDecrement];
             if (counterToDecrement.state >= counterToDecrement.max) {
-                counterToDecrement.state = 0;
+                const previousCounter = counters[counterIndexToDecrement - 1];
+                if (previousCounter) {
+                    const previousMatches = matches[counterIndexToDecrement - 1];
+                    const previousIndex = previousMatches[previousCounter.state].index;
+                    const resetPoint = matches[counterIndexToDecrement].findIndex((m) => m.index > previousIndex);
+                    counterToDecrement.state = resetPoint ?? 0;
+                } else {
+                    counterToDecrement.state = 0;
+                }
                 counterIndexToDecrement--;
             } else {
                 counterToDecrement.state++;
-                break;
+                break tick;
             }
         }
+        tick++;
     }
 
     console.log(sequences.size);
@@ -132,7 +151,8 @@ function validate(towers: string, groups: number[]) {
         .filter((s) => !!s);
     const setCounts = sets.reduce((lengths: number[], set) => [...lengths, set.length], []);
 
-    return setCounts.every((count, i) => count === groups[i]) && setCounts.length === groups.length;
+    const isValid = setCounts.every((count, i) => count === groups[i]) && setCounts.length === groups.length;
+    return isValid;
 }
 
 function unfold(input: Input): Input {
@@ -141,7 +161,7 @@ function unfold(input: Input): Input {
 
     // Part 2
     return {
-        towers: `${input.towers}${input.towers}${input.towers}${input.towers}${input.towers}`,
+        towers: `${input.towers}?${input.towers}?${input.towers}?${input.towers}?${input.towers}`,
         groups: [...input.groups, ...input.groups, ...input.groups, ...input.groups, ...input.groups],
     };
 }
