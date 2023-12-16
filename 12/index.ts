@@ -13,7 +13,7 @@ type Match = {
 };
 
 const start = Date.now();
-const runtime = () => Date.now() - start;
+const runtime = () => new Date(Date.now() - start).toISOString().split("T")[1].split(".")[0];
 
 (async () => {
     const input = await readFile("12/input.txt");
@@ -28,7 +28,7 @@ const runtime = () => Date.now() - start;
 
     const unfolded = rows.map(unfold);
 
-    // return generateSequences(unfolded[2], 2);
+    //return generateSequences(unfolded[8], 8); // 45
 
     const sequences = unfolded.map((input, line) => {
         return generateSequences(input, line);
@@ -45,12 +45,10 @@ function findAllMatches(reg: RegExp, str: string) {
     const matches: Match[] = [];
     let found: RegExpExecArray;
     let finds = 0;
-    console.log("Matching...", { reg, str });
     while ((found = reg.exec(str))) {
         matches.push({ text: found[0], index: found.index });
         reg.lastIndex = found.index + 1;
         finds++;
-        console.log("Matching...", { finds });
     }
     if (matches.length < 1) {
         console.error({
@@ -73,21 +71,28 @@ function generateSequences(input: Input, lineNumber: number) {
         const precedingSets = input.groups
             .slice(0, index)
             .map((size) => `[\\?#]{${size}}`)
-            .join("[\\.\\?]+");
+            .join("[\\.\\?]+?");
+        const precedingLookup = new RegExp(precedingSets ? `^[\\.\\?]*?${precedingSets}[\\.\\?]+?` : "^[\\.\\?]*?");
+        const preceding = input.towers.match(precedingLookup);
+        const minIndex = (preceding.index ?? 0) + (preceding[0]?.length ?? 0);
+
         const followingSets = input.groups
             .slice(index + 1, input.groups.length)
             .map((size) => `[\\?#]{${size}}`)
-            .join("[\\.\\?]+");
-        const search = `[\\?#]{${group}}`;
+            .join("[\\.\\?]+?");
+        const followingLookup = new RegExp(
+            followingSets ? `(.*)[\\.\\?]+?${followingSets}[\\.\\?]*?$` : `(.*)[\\.\\?]*?$`
+        );
+        const following = input.towers.match(followingLookup);
+        const maxIndex = following[1]?.length ?? input.towers.length;
 
-        let regex = "";
-        regex += precedingSets ? `(?<=^[\\.\\?]*${precedingSets}[\\.\\?]+)` : "(?<=^[\\.\\?]*)";
-        regex += search;
-        regex += followingSets ? `(?=[\\.\\?]+${followingSets}[\\.\\?]*$)` : `(?=[\\.\\?]*$)`;
+        const searchSpace = input.towers.substring(minIndex, maxIndex);
 
-        const matcher = new RegExp(regex);
+        const search = `(?<!#)[\\?#]{${group}}(?!#)`;
+        const groupMatches = findAllMatches(new RegExp(search), searchSpace);
+        const alignedMatches = groupMatches.map((m) => ({ ...m, index: m.index + minIndex }));
 
-        matches.push(findAllMatches(matcher, input.towers));
+        matches.push(alignedMatches);
     }
 
     let sequences = 0;
@@ -96,14 +101,13 @@ function generateSequences(input: Input, lineNumber: number) {
         max: match.length - 1,
     }));
 
-    let tick = 0;
     let ticking = true;
 
     const visualizeSequence = () => {
         // Generate the sequence
         let sequence = input.towers;
-        const matchesToUse = counters.map((counter, index) => matches[index][counter.state]);
-        for (const match of matchesToUse) {
+        for (const [i, counter] of counters.entries()) {
+            const match = matches[i][counter.state];
             sequence = replaceAt(sequence, match.index, match.text.replace(/\?/g, "#"));
         }
         return sequence.replace(/\?/g, ".");
@@ -139,11 +143,11 @@ function generateSequences(input: Input, lineNumber: number) {
         while ((found = hashes.exec(input.towers))) {
             const counterHasHash = counters.some((counter, i) => {
                 const match = matches[i][counter.state];
-                return found.index >= match.index && found.index < match.index + match.text.length;
+                return found.index >= match?.index && found.index < match?.index + match?.text?.length;
             });
             if (!counterHasHash) {
                 //Is it before counter 0
-                if (matches[0][counters[0].state].index > found.index + found[0].length) {
+                if (matches[0][counters[0].state]?.index > found.index + found[0].length) {
                     // Then we're done, nothing else will match
                     counters.forEach((c) => (c.state = 9999));
                 }
@@ -151,11 +155,10 @@ function generateSequences(input: Input, lineNumber: number) {
                 // Ok so find the offender
                 const counterIBeforeHash = counters.findLastIndex(
                     (counter, i) =>
-                        matches[i][counter.state].index + matches[i][counter.state].text.length < found.index
+                        matches[i][counter.state]?.index + matches[i][counter.state]?.text?.length < found.index
                 );
                 if (counterIBeforeHash < 0) {
-                    // :shrug:
-                    console.error("Failed to validate counters");
+                    ticking = false;
                     return;
                 }
 
@@ -171,7 +174,7 @@ function generateSequences(input: Input, lineNumber: number) {
                     if (!counterAfterHash) {
                         const matchesBeforeHash = matches[counterIBeforeHash];
                         const nextValidState = matchesBeforeHash.findIndex(
-                            (match) => match.index + match.text.length <= found.index
+                            (match) => match.index + match.text.length >= found.index
                         );
                         counterBeforeHash.state = nextValidState;
                     } else {
@@ -193,50 +196,32 @@ function generateSequences(input: Input, lineNumber: number) {
         }
     };
 
-    const validateCounters = () => {
-        const hashes = /#+/g;
-        let found: RegExpExecArray;
-        while ((found = hashes.exec(input.towers))) {
-            const counterHasHash = counters.some((counter, i) => {
-                const match = matches[i][counter.state];
-                return found.index >= match.index && found.index < match.index + match.text.length;
-            });
-            if (!counterHasHash) {
-                return false;
-            }
-        }
-        return true;
-    };
-
     validateCountersSkip();
     while (ticking) {
-        if (tick % 1_000_000 === 0)
+        if (sequences % 1_000_000 === 0)
             console.log(
                 lineNumber,
                 counters.map((counter) => `${counter.state.toFixed(0).padStart(2, "0")}`).join("-"),
                 visualizeSequence(),
-                //validateCounters(),
-                tick,
-                runtime()
+                runtime(),
+
+                sequences
             );
 
+        sequences++;
         incrementCounter(counters.length - 1);
         validateCountersSkip();
-
-        //if (validateCounters()) {
-        sequences++;
-        //}
-
-        tick++;
     }
 
-    console.log({ permutations: sequences });
+    console.log({
+        permutations: sequences,
+    });
     return sequences;
 }
 
 function unfold(input: Input): Input {
     // Part 1
-    // return input;
+    //return input;
 
     // Part 2
     return {
