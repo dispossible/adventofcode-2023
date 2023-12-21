@@ -1,5 +1,5 @@
-import { range, sum } from "../utils/array";
-import { parseNumberList, readFile } from "../utils/file";
+import { sum } from "../utils/array";
+import { parseNumberList, readFile, readJsonFile, writeJsonFile } from "../utils/file";
 import { replaceAt } from "../utils/string";
 
 type Input = {
@@ -28,14 +28,18 @@ const runtime = () => new Date(Date.now() - start).toISOString().split("T")[1].s
 
     const unfolded = rows.map(unfold);
 
-    //return generateSequences(unfolded[133], 133); // 6
+    //return generateSequences(unfolded[700], 700); //
 
-    const sequences = unfolded.map((input, line) => {
-        return generateSequences(input, line);
-    });
-    console.log(sequences.join(","));
+    const results = await readJsonFile<number[]>("12/output.json", []);
+
+    for (let line = results.length; line < unfolded.length; line++) {
+        results[line] = generateSequences(unfolded[line], line);
+        await writeJsonFile("12/output.json", results);
+    }
+
+    console.log(results.join(","));
     console.log({
-        sum: sum(sequences),
+        sum: sum(results),
         runtime: runtime(),
     });
 })();
@@ -99,6 +103,7 @@ function generateSequences(input: Input, lineNumber: number) {
     const counters = matches.map((match) => ({
         _state: 0,
         max: match.length - 1,
+        resets: 0,
         cacheStart: new Map<number, number>([]), // <state, count>
         cache: new Map<number, number>(), // <state, count>
         cacheComplete: false,
@@ -143,6 +148,7 @@ function generateSequences(input: Input, lineNumber: number) {
                 (m) => m.index > previousMatch.index + previousMatch.text.length
             );
             counter.state = resetPoint ?? 0;
+            counter.resets++;
         } else {
             counter.state++;
         }
@@ -303,7 +309,7 @@ function generateSequences(input: Input, lineNumber: number) {
 
 function unfold(input: Input): Input {
     // Part 1
-    return input;
+    //return input;
 
     // Part 2
     return {
